@@ -1,7 +1,6 @@
 use parking::Unparker;
 use std::{
     future::Future,
-    marker::PhantomData,
     mem,
     pin::Pin,
     sync::{
@@ -18,9 +17,9 @@ mod task;
 pub use task::Task;
 
 mod usages;
-pub use usages::Compute;
-
-pub type ComputePool = TaskPool<Compute>;
+pub use usages::AsyncComputeTaskPool;
+pub use usages::ComputeTaskPool;
+pub use usages::IOTaskPool;
 
 macro_rules! pin_mut {
     ($($x:ident),*) => { $(
@@ -75,7 +74,7 @@ impl TaskPoolBuilder {
     }
 
     /// Creates a new ThreadPoolBuilder based on the current options.
-    pub fn build<Usage>(self) -> TaskPool<Usage> {
+    pub fn build(self) -> TaskPool {
         TaskPool::new_internal(
             self.num_threads,
             self.stack_size,
@@ -84,12 +83,12 @@ impl TaskPoolBuilder {
     }
 }
 
-struct TaskPoolInternal {
+struct TaskPoolInner {
     threads: Vec<(JoinHandle<()>, Arc<Unparker>)>,
     shutdown_flag: Arc<AtomicBool>,
 }
 
-impl Drop for TaskPoolInternal {
+impl Drop for TaskPoolInner {
     fn drop(&mut self) {
         self.shutdown_flag.store(true, Ordering::Release);
 
@@ -106,13 +105,20 @@ impl Drop for TaskPoolInternal {
 
 /// A thread pool for executing tasks. Tasks are futures that are being automatically driven by
 /// the pool on threads owned by the pool.
-pub struct TaskPool<Usage = Compute> {
+#[derive(Clone)]
+pub struct TaskPool {
+    /// The executor for the pool
+    ///
+    /// This has to be separate from TaskPoolInner because we have to create an Arc<Executor> to
+    /// pass into the worker threads, and we must create the worker threads before we can create the
+    /// Vec<Task<T>> contained within TaskPoolInner
     executor: Arc<multitask::Executor>,
-    internal: Arc<TaskPoolInternal>,
-    _marker: PhantomData<Usage>,
+
+    ///
+    inner: Arc<TaskPoolInner>,
 }
 
-impl<Usage> TaskPool<Usage> {
+impl TaskPool {
     /// Create a `TaskPool` with the default configuration.
     pub fn new() -> Self {
         TaskPoolBuilder::new().build()
@@ -170,17 +176,16 @@ impl<Usage> TaskPool<Usage> {
 
         Self {
             executor,
-            internal: Arc::new(TaskPoolInternal {
+            inner: Arc::new(TaskPoolInner {
                 threads,
                 shutdown_flag,
             }),
-            _marker: PhantomData,
         }
     }
 
     /// Return the number of threads owned by the task pool
     pub fn thread_num(&self) -> usize {
-        self.internal.threads.len()
+        self.inner.threads.len()
     }
 
     /// Allows spawning non-`static futures on the thread pool. The function takes a callback,
@@ -234,19 +239,9 @@ impl<Usage> TaskPool<Usage> {
     }
 }
 
-impl<Usage> Default for TaskPool<Usage> {
+impl Default for TaskPool {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl<Usage> Clone for TaskPool<Usage> {
-    fn clone(&self) -> Self {
-        Self {
-            executor: Arc::clone(&self.executor),
-            internal: Arc::clone(&self.internal),
-            _marker: PhantomData,
-        }
     }
 }
 
