@@ -1,8 +1,6 @@
-use crate::{
-    impl_into_shader_resource,
-};
+use crate::impl_into_shader_resource;
 use bevy_asset::Handle;
-use bevy_core::{Byteable, Bytes};
+use bevy_core::Byteable;
 use bevy_math::{Vec3, Vec4};
 use bevy_property::Property;
 use serde::{Deserialize, Serialize};

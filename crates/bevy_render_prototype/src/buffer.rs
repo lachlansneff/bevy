@@ -1,15 +1,11 @@
-use crate::shader_resources::{ShaderResource, GpuShaderResource};
+use crate::shader_resources::{GpuShaderResource, ShaderResource};
 use bevy_asset::Handle;
-use std::{
-    fmt,
-    ops::RangeBounds,
-};
-
+use std::{fmt, ops::RangeBounds};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum MapMode {
     Read,
-    Write
+    Write,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -23,16 +19,20 @@ impl fmt::Display for BufferMappingError {
 
 #[non_exhaustive]
 pub enum Buffer {
-    Wgpu {
-        buffer: wgpu::Buffer,
-        size: u64,
-    },
-    NoBackend,
+    #[cfg(feature = "wgpu")]
+    Wgpu { buffer: wgpu::Buffer, size: u64 },
+    #[cfg(feature = "headless")]
+    Headless,
 }
 
 impl Buffer {
-    pub async fn map_async<S: RangeBounds<u64>>(&self, mode: MapMode, range: S) -> Result<(), BufferMappingError> {
+    pub async fn map_async<S: RangeBounds<u64>>(
+        &self,
+        mode: MapMode,
+        range: S,
+    ) -> Result<(), BufferMappingError> {
         match self {
+            #[cfg(feature = "wgpu")]
             Self::Wgpu { buffer, .. } => {
                 let mode = match mode {
                     MapMode::Read => wgpu::MapMode::Read,
@@ -41,17 +41,20 @@ impl Buffer {
 
                 let res = buffer.slice(range).map_async(mode).await;
                 res.map_err(|_| BufferMappingError)
-            },
-            Self::NoBackend => Ok(()),
+            }
+            #[cfg(feature = "headless")]
+            Self::Headless => Ok(()),
         }
     }
 
     pub fn unmap(&self) {
         match self {
+            #[cfg(feature = "wgpu")]
             Self::Wgpu { buffer, .. } => {
                 buffer.unmap();
-            },
-            Self::NoBackend => {},
+            }
+            #[cfg(feature = "headless")]
+            Self::Headless => {}
         }
     }
 }

@@ -27,9 +27,9 @@ pub trait ShaderResources {
 
 // impl<T> From<T> for ShaderResource where T: AsBytes {
 //     fn from(as_bytes: T) -> Self {
-        
+
 //     }
-// } 
+// }
 
 #[macro_export]
 macro_rules! impl_into_shader_resource {

@@ -1,6 +1,5 @@
-
-pub mod shader_resources;
 pub mod buffer;
+pub mod shader_resources;
 
 pub mod color;
 
