@@ -1,18 +1,18 @@
-use crate::buffer::Buffer;
+use crate::{buffer::Buffer, texture::Texture};
 use bevy_asset::Handle;
-use bevy_core::AsBytes;
 use bevy_math::{Mat4, Vec2, Vec3, Vec4};
 use std::borrow::Cow;
 
 #[derive(Clone)]
 pub enum GpuShaderResource {
     Buffer(Handle<Buffer>),
+    Texture(Handle<Texture>),
 }
 
 #[derive(Clone)]
 pub enum ShaderResource<'a> {
     Gpu(GpuShaderResource),
-    Cpu(&'a dyn AsBytes),
+    Cpu(&'a [u8]),
 }
 
 #[derive(Clone)]
@@ -36,7 +36,8 @@ macro_rules! impl_into_shader_resource {
     ($ty:ident) => {
         impl<'a> From<&'a $ty> for crate::shader_resources::ShaderResource<'a> {
             fn from(x: &'a $ty) -> Self {
-                Self::Cpu(x)
+                use bevy_core::AsBytes;
+                Self::Cpu(x.as_bytes())
             }
         }
     };
@@ -58,14 +59,14 @@ impl_into_shader_resource!(i64);
 impl_into_shader_resource!(f32);
 impl_into_shader_resource!(f64);
 
-impl From<Vec<u8>> for ShaderResource<'_> {
-    fn from(vec: Vec<u8>) -> Self {
-        Self::Cpu(&vec.as_slice())
+impl<'a> From<&'a Vec<u8>> for ShaderResource<'a> {
+    fn from(vec: &'a Vec<u8>) -> Self {
+        Self::Cpu(vec.as_slice())
     }
 }
 
-impl From<Box<[u8]>> for ShaderResource<'_> {
-    fn from(b: Box<[u8]>) -> Self {
-        Self::Cpu(&&*b)
+impl<'a> From<&'a Box<[u8]>> for ShaderResource<'a> {
+    fn from(b: &'a Box<[u8]>) -> Self {
+        Self::Cpu(&*b)
     }
 }

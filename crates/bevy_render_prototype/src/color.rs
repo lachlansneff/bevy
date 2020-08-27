@@ -1,4 +1,4 @@
-use crate::impl_into_shader_resource;
+use crate::{impl_into_shader_resource, texture::Texture};
 use bevy_asset::Handle;
 use bevy_core::Byteable;
 use bevy_math::{Vec3, Vec4};
