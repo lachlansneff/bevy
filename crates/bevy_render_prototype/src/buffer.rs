@@ -1,6 +1,9 @@
-use crate::shader_resources::{GpuShaderResource, ShaderResource};
 #[cfg(feature = "wgpu")]
 use crate::wgpu::UnwrapWgpu;
+use crate::{
+    shader_resources::{GpuShaderResource, ShaderResource},
+    texture::TextureDataLayout,
+};
 use bevy_asset::Handle;
 use std::{fmt, ops::RangeBounds};
 
@@ -72,22 +75,7 @@ impl<'a> From<&BufferDescriptor<'a>> for wgpu::BufferDescriptor<'a> {
 
 pub struct BufferCopyView<'a> {
     pub buffer: &'a Buffer,
-    /// Offset into the buffer that is the start of the texture. Must be a multiple of texture block size.
-    /// For non-compressed textures, this is 1.
-    pub offset: u64,
-    /// Bytes per "row" of the image. This represents one row of pixels in the x direction. Compressed
-    /// textures include multiple rows of pixels in each "row". May be 0 for 1D texture copies.
-    ///
-    /// Must be a multiple of 256 for [`CommandEncoder::copy_buffer_to_texture`] and [`CommandEncoder::copy_texture_to_buffer`].
-    /// [`Queue::write_texture`] does not have this requirement.
-    ///
-    /// Must be a multiple of the texture block size. For non-compressed textures, this is 1.
-    pub bytes_per_row: u32,
-    /// Rows that make up a single "image". Each "image" is one layer in the z direction of a 3D image. May be larger
-    /// than `copy_size.y`.
-    ///
-    /// May be 0 for 2D texture copies.
-    pub rows_per_image: u32,
+    pub layout: TextureDataLayout,
 }
 
 #[cfg(feature = "wgpu")]
@@ -95,11 +83,7 @@ impl<'a> From<BufferCopyView<'a>> for wgpu::BufferCopyView<'a> {
     fn from(view: BufferCopyView<'a>) -> Self {
         Self {
             buffer: view.buffer.unwrap_wgpu().0,
-            layout: wgpu::TextureDataLayout {
-                offset: view.offset,
-                bytes_per_row: view.bytes_per_row,
-                rows_per_image: view.rows_per_image,
-            },
+            layout: view.layout.into(),
         }
     }
 }

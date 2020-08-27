@@ -3,6 +3,7 @@ use crate::wgpu::UnwrapWgpu;
 use crate::{
     buffer::{Buffer, BufferDescriptor},
     commands::CommandBuffer,
+    texture::{Extent3d, TextureCopyView, TextureDataLayout},
 };
 
 #[non_exhaustive]
@@ -55,7 +56,24 @@ impl Queue {
         }
     }
 
-    // pub fn write_texture
+    pub fn write_texture(
+        &self,
+        texture: TextureCopyView,
+        data: &[u8],
+        data_layout: TextureDataLayout,
+        size: Extent3d,
+    ) {
+        match self {
+            #[cfg(feature = "wgpu")]
+            Self::Wgpu(queue) => {
+                queue.write_texture(texture.into(), data, data_layout.into(), size.into())
+            }
+            #[cfg(feature = "headless")]
+            Self::Headless => {
+                let _ = (texture, data, data_layout, size);
+            }
+        }
+    }
 
     pub fn submit<I>(&self, command_buffers: I)
     where
