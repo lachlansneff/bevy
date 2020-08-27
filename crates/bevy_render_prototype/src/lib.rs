@@ -1,7 +1,11 @@
 pub mod buffer;
+pub mod color;
+pub mod device;
 pub mod shader_resources;
 
-pub mod color;
+fn wrong_backend() -> ! {
+    panic!("render backend invariant broken, you have multiple render backend activated!!!")
+}
 
 #[cfg(test)]
 mod tests {

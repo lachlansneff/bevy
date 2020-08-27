@@ -8,6 +8,15 @@ pub enum MapMode {
     Write,
 }
 
+impl From<MapMode> for wgpu::MapMode {
+    fn from(mode: MapMode) -> Self {
+        match mode {
+            MapMode::Read => wgpu::MapMode::Read,
+            MapMode::Write => wgpu::MapMode::Write,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BufferMappingError;
 
@@ -26,6 +35,14 @@ pub enum Buffer {
 }
 
 impl Buffer {
+    #[cfg(feature = "wgpu")]
+    pub(crate) fn as_wgpu_backend(&self) -> (&wgpu::Buffer, u64) {
+        match *self {
+            Self::Wgpu { ref buffer, size } => (buffer, size),
+            _ => crate::wrong_backend(),
+        }
+    }
+
     pub async fn map<S: RangeBounds<u64>>(
         &self,
         mode: MapMode,
@@ -33,18 +50,11 @@ impl Buffer {
     ) -> Result<(), BufferMappingError> {
         match self {
             #[cfg(feature = "wgpu")]
-            Self::Wgpu { buffer, .. } => {
-                let mode = match mode {
-                    MapMode::Read => wgpu::MapMode::Read,
-                    MapMode::Write => wgpu::MapMode::Write,
-                };
-
-                buffer
-                    .slice(range)
-                    .map_async(mode)
-                    .await
-                    .map_err(|_| BufferMappingError)
-            }
+            Self::Wgpu { buffer, .. } => buffer
+                .slice(range)
+                .map_async(mode.into())
+                .await
+                .map_err(|_| BufferMappingError),
             #[cfg(feature = "headless")]
             Self::Headless => {
                 let _ = (mode, range);
@@ -63,6 +73,8 @@ impl Buffer {
             Self::Headless => {}
         }
     }
+
+    // ... https://wgpu.rs/doc/wgpu/struct.Buffer.html
 }
 
 impl From<&Handle<Buffer>> for ShaderResource<'_> {
