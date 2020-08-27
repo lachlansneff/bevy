@@ -124,6 +124,13 @@ impl FromBytes for Mat4 {
     }
 }
 
+impl AsBytes for Mat4 {
+    fn as_bytes(&self) -> &[u8] {
+        let floats = self.as_ref();
+        floats.as_bytes()
+    }
+}
+
 impl<T> Bytes for Option<T>
 where
     T: Bytes,

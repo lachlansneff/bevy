@@ -6,4 +6,17 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["wgpu"]
+
 [dependencies]
+bevy_asset = { path = "../bevy_asset", version = "0.1" }
+bevy_core = { path = "../bevy_core", version = "0.1" }
+bevy_math = { path = "../bevy_math", version = "0.1" }
+bevy_property = { path = "../bevy_property", version = "0.1" }
+
+serde = { version = "1", features = ["derive"] }
+
+[dependencies.wgpu]
+version = "0.6"
+optional = true
