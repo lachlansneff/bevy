@@ -8,6 +8,7 @@ pub enum MapMode {
     Write,
 }
 
+#[cfg(feature = "wgpu")]
 impl From<MapMode> for wgpu::MapMode {
     fn from(mode: MapMode) -> Self {
         match mode {
@@ -23,6 +24,47 @@ pub struct BufferMappingError;
 impl fmt::Display for BufferMappingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Error occurred when trying to async map a buffer")
+    }
+}
+
+bitflags::bitflags! {
+    #[repr(transparent)]
+    pub struct BufferUsage: u32 {
+        const MAP_READ = 1;
+        const MAP_WRITE = 2;
+        const COPY_SRC = 4;
+        const COPY_DST = 8;
+        const INDEX = 16;
+        const VERTEX = 32;
+        const UNIFORM = 64;
+        const STORAGE = 128;
+        const INDIRECT = 256;
+    }
+}
+
+#[cfg(feature = "wgpu")]
+impl From<BufferUsage> for wgpu::BufferUsage {
+    fn from(usage: BufferUsage) -> Self {
+        wgpu::BufferUsage::from_bits(usage.bits()).expect("failed to convert buffer usage")
+    }
+}
+
+pub struct BufferDescriptor<'a> {
+    pub label: Option<&'a str>,
+    pub size: u64,
+    pub usage: BufferUsage,
+    pub mapped_at_creation: bool,
+}
+
+#[cfg(feature = "wgpu")]
+impl<'a> From<&BufferDescriptor<'a>> for wgpu::BufferDescriptor<'a> {
+    fn from(desc: &BufferDescriptor<'a>) -> Self {
+        wgpu::BufferDescriptor {
+            label: desc.label,
+            size: desc.size,
+            usage: desc.usage.into(),
+            mapped_at_creation: desc.mapped_at_creation,
+        }
     }
 }
 

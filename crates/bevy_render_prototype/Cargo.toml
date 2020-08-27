@@ -17,6 +17,7 @@ bevy_math = { path = "../bevy_math", version = "0.1" }
 bevy_property = { path = "../bevy_property", version = "0.1" }
 
 serde = { version = "1", features = ["derive"] }
+bitflags = "1.2"
 
 [dependencies.wgpu]
 version = "0.6"

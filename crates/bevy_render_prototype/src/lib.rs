@@ -1,5 +1,6 @@
 pub mod buffer;
 pub mod color;
+pub mod commands;
 pub mod device_queue;
 pub mod shader_resources;
 

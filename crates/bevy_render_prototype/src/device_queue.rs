@@ -1,6 +1,9 @@
-use crate::buffer::Buffer;
 #[cfg(feature = "wgpu")]
 use crate::wgpu::UnwrapWgpu;
+use crate::{
+    buffer::{Buffer, BufferDescriptor},
+    commands::CommandBuffer,
+};
 
 #[non_exhaustive]
 pub enum Device {
@@ -23,7 +26,7 @@ impl Device {
         match self {
             #[cfg(feature = "wgpu")]
             Self::Wgpu(device) => Buffer::Wgpu {
-                buffer: device.create_buffer(desc.into()),
+                buffer: device.create_buffer(&desc.into()),
                 size: desc.size,
             },
             #[cfg(feature = "headless")]
