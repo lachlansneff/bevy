@@ -52,6 +52,7 @@ bevy_math = { path = "crates/bevy_math", version = "0.1" }
 bevy_pbr = { path = "crates/bevy_pbr", version = "0.1" }
 bevy_property = { path = "crates/bevy_property", version = "0.1" }
 bevy_render = { path = "crates/bevy_render", version = "0.1" }
+bevy_render_prototype = { path = "crates/bevy_render_prototype", version = "0.1" }
 bevy_scene = { path = "crates/bevy_scene", version = "0.1" }
 bevy_sprite = { path = "crates/bevy_sprite", version = "0.1" }
 bevy_transform = { path = "crates/bevy_transform", version = "0.1" }

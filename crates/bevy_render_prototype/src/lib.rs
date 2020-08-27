@@ -4,6 +4,8 @@ pub mod buffer;
 pub mod color;
 pub mod commands;
 pub mod device_queue;
+pub mod pipeline;
+pub mod shader;
 pub mod shader_resources;
 pub mod texture;
 
