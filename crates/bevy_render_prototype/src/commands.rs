@@ -1,6 +1,9 @@
-use crate::buffer::Buffer;
 #[cfg(feature = "wgpu")]
 use crate::wgpu::UnwrapWgpu;
+use crate::{
+    buffer::{Buffer, BufferCopyView},
+    texture::{Extent3d, TextureCopyView},
+};
 
 #[non_exhaustive]
 pub enum CommandBuffer {
@@ -55,6 +58,24 @@ impl CommandEncoder {
             #[cfg(feature = "headless")]
             CommandEncoder::Headless => {
                 let _ = (src, src_offset, dest, dest_offset, copy_size);
+            }
+        }
+    }
+
+    pub fn copy_buffer_to_texture(
+        &mut self,
+        src: BufferCopyView,
+        dest: TextureCopyView,
+        copy_size: Extent3d,
+    ) {
+        match self {
+            #[cfg(feature = "wgpu")]
+            CommandEncoder::Wgpu(command_encoder) => {
+                command_encoder.copy_buffer_to_texture(src.into(), dest.into(), copy_size.into())
+            }
+            #[cfg(feature = "headless")]
+            CommandEncoder::Headless => {
+                let _ = (src, dest, copy_size);
             }
         }
     }
