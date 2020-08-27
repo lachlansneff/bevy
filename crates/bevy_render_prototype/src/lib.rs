@@ -1,3 +1,5 @@
+#![cfg_attr(not(any(feature = "headless", feature = "wgpu")), allow(dead_code))]
+
 pub mod buffer;
 pub mod color;
 pub mod commands;
