@@ -58,7 +58,26 @@ impl From<TextureDimension> for wgpu::TextureDimension {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+/// Type of data shaders will read from a texture.
+#[derive(Copy, Hash, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub enum TextureComponentType {
+    Float,
+    Sint,
+    Uint,
+}
+
+/// Dimensions of a particular texture view.
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub enum TextureViewDimension {
+    D1,
+    D2,
+    D2Array,
+    Cube,
+    CubeArray,
+    D3,
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum TextureFormat {
     // Normal 8 bit formats
     /// Red channel only. 8 bit integer per channel. [0, 255] converted to/from float [0, 1] in shader.
@@ -251,7 +270,7 @@ pub enum TextureFormat {
 
 #[cfg(feature = "wgpu")]
 impl From<TextureFormat> for wgpu::TextureFormat {
-    fn from(format: TextureFormat) -> Self {
+    fn from(_format: TextureFormat) -> Self {
         unimplemented!()
     }
 }
