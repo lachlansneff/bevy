@@ -1,4 +1,4 @@
-use crate::{impl_into_shader_resource, texture::Texture};
+use crate::{impl_into_uniform_type, texture::Texture};
 use bevy_asset::Handle;
 use bevy_core::Byteable;
 use bevy_math::{Vec3, Vec4};
@@ -86,6 +86,12 @@ impl From<Vec4> for Color {
             b: vec4.z(),
             a: vec4.w(),
         }
+    }
+}
+
+impl From<Color> for Vec4 {
+    fn from(color: Color) -> Self {
+        Vec4::new(color.r, color.g, color.b, color.a)
     }
 }
 
@@ -183,4 +189,4 @@ impl From<Handle<Texture>> for ColorSource {
     }
 }
 
-impl_into_shader_resource!(Color);
+impl_into_uniform_type!(Color = Vec4);

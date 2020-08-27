@@ -1,10 +1,8 @@
 #[cfg(feature = "wgpu")]
 use crate::wgpu::UnwrapWgpu;
 use crate::{
-    shader_resources::{GpuShaderResource, ShaderResource},
     texture::TextureDataLayout,
 };
-use bevy_asset::Handle;
 use std::{fmt, ops::RangeBounds};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -141,11 +139,5 @@ impl<'a> crate::wgpu::UnwrapWgpu for &'a Buffer {
             Buffer::Wgpu { ref buffer, size } => Ok((buffer, size)),
             _ => Err(()),
         }
-    }
-}
-
-impl From<&Handle<Buffer>> for ShaderResource<'_> {
-    fn from(handle: &Handle<Buffer>) -> Self {
-        ShaderResource::Gpu(GpuShaderResource::Buffer(*handle))
     }
 }
