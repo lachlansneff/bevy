@@ -26,6 +26,7 @@ pub trait Uniform {
 
 pub trait ShaderResources {
     fn shader_resources(&self) -> Cow<[(Option<Cow<str>>, ShaderBinding, ShaderResource)]>;
+    fn shader_specialization(&self) -> Cow<[(Cow<str>, bool)]>;
 }
 
 // The way I'm visualing this:
@@ -38,7 +39,7 @@ pub trait ShaderResources {
 //     uv: Vec2,
 //     constants: [i32; 3],
 // }
-//
+
 // #[derive(ShaderResources)]
 // struct MyShaderResources {
 //     #[uniform(set = 0, binding = 0)]
@@ -49,6 +50,10 @@ pub trait ShaderResources {
 //     point_buffer: Handle<Buffer>,
 //     #[texture(set = 0, binding = 2)]
 //     my_texture: Handle<Texture>,
+//     #[specialize]
+//     shading_enabled: bool,
+//     #[specialize("ENABLE_FOOBAR")]
+//     foobar_enabled: bool,
 // }
 
 pub trait IntoUniformType {
