@@ -1,6 +1,6 @@
 use crate::{buffer::Buffer, texture::Texture};
 use bevy_asset::Handle;
-use bevy_math::{Vec2, Vec3, Vec4, Mat2, Mat3, Mat4, Quat};
+use bevy_math::{Mat2, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
 use std::borrow::Cow;
 
 #[derive(Clone)]
@@ -21,7 +21,7 @@ pub trait Uniform {
     /// Since the uniform is converted into a correctly padded version inline,
     /// we can't return it in a dynamic manner.
     fn copy_padded_to_slice(&self, s: &mut [u8]);
-    fn size(&self) -> usize;
+    fn padded_size(&self) -> usize;
 }
 
 pub trait ShaderResources {
@@ -39,7 +39,7 @@ pub trait ShaderResources {
 //     uv: Vec2,
 //     constants: [i32; 3],
 // }
-
+//
 // #[derive(ShaderResources)]
 // struct MyShaderResources {
 //     #[uniform(set = 0, binding = 0)]
@@ -56,85 +56,117 @@ pub trait ShaderResources {
 //     foobar_enabled: bool,
 // }
 
-pub trait IntoUniformType {
-    type Padded;
-    fn into_uniform_type(self) -> Self::Padded;
+
+// Can we just recreate this in every instance of the proc macro
+// to avoid exporting them?
+#[doc(hidden)]
+pub unsafe trait IntoStd140 {
+    type Ty;
+    type Align: Default;
+
+    fn into_std140(&self) -> Self::Ty;
 }
 
-#[macro_export]
-macro_rules! impl_into_uniform_type {
-    ($ty:ty) => {
-        impl crate::shader_resources::IntoUniformType for $ty {
-            type Padded = $ty;
-            fn into_uniform_type(self) -> Self::Padded {
-                self
+#[doc(hidden)]
+#[repr(align(4))]
+#[derive(Default)]
+pub struct Align4;
+#[doc(hidden)]
+#[repr(align(8))]
+#[derive(Default)]
+pub struct Align8;
+#[doc(hidden)]
+#[repr(align(16))]
+#[derive(Default)]
+pub struct Align16;
+
+macro_rules! impl_scalar {
+    ($type:ty : $align:ty) => {
+        #[doc(hidden)]
+        unsafe impl IntoStd140 for $type {
+            type Ty = $type;
+            type Align = $align;
+            fn into_std140(&self) -> $type {
+                *self
             }
         }
     };
-    ($ty:ty as $target:ty) => {
-        impl crate::shader_resources::IntoUniformType for $ty {
-            type Padded = $target;
-            fn into_uniform_type(self) -> Self::Padded {
-                self as $target
+    ($type:ty as $as_type:ty : $align:ty) => {
+        #[doc(hidden)]
+        unsafe impl IntoStd140 for $type {
+            type Ty = $as_type;
+            type Align = $align;
+            fn into_std140(&self) -> $as_type {
+                *self as $as_type
             }
         }
     };
-    ($ty:ty = $target:ty) => {
-        impl crate::shader_resources::IntoUniformType for $ty {
-            type Padded = <$target as crate::shader_resources::IntoUniformType>::Padded;
-            fn into_uniform_type(self) -> Self::Padded {
-                let x: $target = self.into();
-                x.into_uniform_type()
-            }
-        }
-    };
-    ($ty:ty => $target:ty) => {
-        impl crate::shader_resources::IntoUniformType for $ty {
-            type Padded = $target;
-            fn into_uniform_type(self) -> Self::Padded {
-                (*(self.as_ref())).into()
-            }
-        }
-    };
-    ($ty:ty ; ($target:ty ; $convert:expr)) => {
-        impl crate::shader_resources::IntoUniformType for $ty {
-            type Padded = $target;
-            fn into_uniform_type(self) -> Self::Padded {
-                (($convert)(self)).into()
-            }
-        }
-    };
-    ($($ty:ty),*) => {
+    ($($type:ty : $align:ty,)*) => {
         $(
-            impl_into_uniform_type!($ty);
+            impl_scalar!($type : $align);
         )*
     };
-    ($($ty:ty as $target:ty),*) => {
+    ($($type:ty as $as_type:ty : $align:ty,)*) => {
         $(
-            impl_into_uniform_type!($ty as $target);
-        )*
-    };
-    ($($ty:ty => $target:ty),*) => {
-        $(
-            impl_into_uniform_type!($ty => $target);
+            impl_scalar!($type as $as_type: $align);
         )*
     };
 }
 
-impl_into_uniform_type!(u32, i32, f32, f64);
-impl_into_uniform_type!(
-    bool as u32,
-    u8 as u32,
-    u16 as u32,
-    i8 as i32,
-    i16 as i32
+impl_scalar!(
+    // simple scalars
+    u32: Align4,
+    i32: Align4,
+    f32: Align4,
+    f64: Align8,
+    // vectors
+    Vec2: Align8,
+    Vec3: Align16,
+    Vec4: Align16,
+    // matrices
+    Mat2: Align16,
+    Mat3: Align16,
+    Mat4: Align16,
+    Quat: Align16, // basically just a Vec4
+    // some other types
+    crate::color::Color: Align4,
 );
-impl_into_uniform_type!(
-    Vec2 => shader_types::Vec2,
-    Vec3 => shader_types::Vec3,
-    Vec4 => shader_types::Vec4,
-    Mat2 => shader_types::Mat2x2,
-    Mat4 => shader_types::Mat4x4,
-    Quat => shader_types::Vec4
+
+impl_scalar!(
+    // scalars that must be casted
+    bool as u32: Align4,
+    u8 as u32: Align4,
+    u16 as u32: Align4,
+    i8 as i32: Align4,
+    i16 as i32: Align4,
 );
-impl_into_uniform_type!(Mat3 ; (shader_types::Mat3x3 ; |x: Mat3| x.to_cols_array()));
+
+#[doc(hidden)]
+#[repr(C, align(16))]
+pub struct Element<T: IntoStd140>(pub T::Ty, pub T::Align);
+
+#[doc(hidden)]
+unsafe impl<T, const N: usize> IntoStd140 for [T; N]
+where
+    T: IntoStd140,
+{
+    type Align = Align16;
+    type Ty = [Element<T>; N];
+
+    fn into_std140(&self) -> Self::Ty {
+        use std::mem::{self, MaybeUninit};
+        let mut array: [MaybeUninit<Element<T>>; N] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        for (from, into) in self.iter().zip(array.iter_mut()) {
+            *into = MaybeUninit::new(Element(from.into_std140(), T::Align::default()));
+        }
+
+        let output = unsafe {
+            (&array as *const [MaybeUninit<Element<T>>; N] as *const [Element<T>; N]).read()
+        };
+        mem::forget(array);
+
+        output
+    }
+}

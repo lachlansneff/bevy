@@ -1,4 +1,4 @@
-use crate::{impl_into_uniform_type, texture::Texture};
+use crate::texture::Texture;
 use bevy_asset::Handle;
 use bevy_core::Byteable;
 use bevy_math::{Vec3, Vec4};
@@ -188,5 +188,3 @@ impl From<Handle<Texture>> for ColorSource {
         ColorSource::Texture(texture)
     }
 }
-
-impl_into_uniform_type!(Color = Vec4);
