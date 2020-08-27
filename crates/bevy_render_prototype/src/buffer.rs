@@ -26,7 +26,7 @@ pub enum Buffer {
 }
 
 impl Buffer {
-    pub async fn map_async<S: RangeBounds<u64>>(
+    pub async fn map<S: RangeBounds<u64>>(
         &self,
         mode: MapMode,
         range: S,
@@ -39,11 +39,17 @@ impl Buffer {
                     MapMode::Write => wgpu::MapMode::Write,
                 };
 
-                let res = buffer.slice(range).map_async(mode).await;
-                res.map_err(|_| BufferMappingError)
+                buffer
+                    .slice(range)
+                    .map_async(mode)
+                    .await
+                    .map_err(|_| BufferMappingError)
             }
             #[cfg(feature = "headless")]
-            Self::Headless => Ok(()),
+            Self::Headless => {
+                let _ = (mode, range);
+                Ok(())
+            }
         }
     }
 
