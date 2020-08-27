@@ -12,12 +12,16 @@ headless = []
 
 [dependencies]
 bevy_asset = { path = "../bevy_asset", version = "0.1" }
+bevy_derive = { path = "../bevy_derive", version = "0.1" }
 bevy_core = { path = "../bevy_core", version = "0.1" }
+bevy_ecs = { path = "../bevy_ecs", version="0.1" }
 bevy_math = { path = "../bevy_math", version = "0.1" }
 bevy_property = { path = "../bevy_property", version = "0.1" }
 
 serde = { version = "1", features = ["derive"] }
 bitflags = "1.2"
+spirv-reflect = "0.2.3"
+bevy-glsl-to-spirv = "0.1.7"
 
 [dependencies.wgpu]
 version = "0.6"
