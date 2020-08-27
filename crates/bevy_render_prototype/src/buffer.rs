@@ -26,7 +26,8 @@ pub enum Buffer {
     Wgpu {
         buffer: wgpu::Buffer,
         size: u64,
-    }
+    },
+    NoBackend,
 }
 
 impl Buffer {
@@ -40,7 +41,8 @@ impl Buffer {
 
                 let res = buffer.slice(range).map_async(mode).await;
                 res.map_err(|_| BufferMappingError)
-            }
+            },
+            Self::NoBackend => Ok(()),
         }
     }
 
@@ -49,6 +51,7 @@ impl Buffer {
             Self::Wgpu { buffer, .. } => {
                 buffer.unmap();
             },
+            Self::NoBackend => {},
         }
     }
 }
