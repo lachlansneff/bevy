@@ -1,8 +1,6 @@
+use crate::texture::TextureDataLayout;
 #[cfg(feature = "wgpu")]
 use crate::wgpu::UnwrapWgpu;
-use crate::{
-    texture::TextureDataLayout,
-};
 use std::{fmt, ops::RangeBounds};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

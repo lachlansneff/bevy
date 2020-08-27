@@ -1,3 +1,4 @@
+#![feature(min_const_generics)] // for now
 #![cfg_attr(not(any(feature = "headless", feature = "wgpu")), allow(dead_code))]
 
 pub mod buffer;
