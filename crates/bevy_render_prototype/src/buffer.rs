@@ -35,14 +35,6 @@ pub enum Buffer {
 }
 
 impl Buffer {
-    #[cfg(feature = "wgpu")]
-    pub(crate) fn as_wgpu_backend(&self) -> (&wgpu::Buffer, u64) {
-        match *self {
-            Self::Wgpu { ref buffer, size } => (buffer, size),
-            _ => crate::wrong_backend(),
-        }
-    }
-
     pub async fn map<S: RangeBounds<u64>>(
         &self,
         mode: MapMode,
@@ -75,6 +67,19 @@ impl Buffer {
     }
 
     // ... https://wgpu.rs/doc/wgpu/struct.Buffer.html
+}
+
+#[cfg(feature = "wgpu")]
+impl<'a> crate::wgpu::UnwrapWgpu for &'a Buffer {
+    type WgpuType = (&'a wgpu::Buffer, u64);
+
+    #[inline]
+    fn try_unwrap_wgpu(self) -> Result<Self::WgpuType, ()> {
+        match *self {
+            Buffer::Wgpu { ref buffer, size } => Ok((buffer, size)),
+            _ => Err(()),
+        }
+    }
 }
 
 impl From<&Handle<Buffer>> for ShaderResource<'_> {

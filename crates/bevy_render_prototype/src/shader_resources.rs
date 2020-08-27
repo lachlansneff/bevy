@@ -57,3 +57,15 @@ impl_into_shader_resource!(i32);
 impl_into_shader_resource!(i64);
 impl_into_shader_resource!(f32);
 impl_into_shader_resource!(f64);
+
+impl From<Vec<u8>> for ShaderResource<'_> {
+    fn from(vec: Vec<u8>) -> Self {
+        Self::Cpu(&vec.as_slice())
+    }
+}
+
+impl From<Box<[u8]>> for ShaderResource<'_> {
+    fn from(b: Box<[u8]>) -> Self {
+        Self::Cpu(&&*b)
+    }
+}

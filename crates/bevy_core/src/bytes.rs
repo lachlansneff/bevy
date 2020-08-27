@@ -77,6 +77,16 @@ where
     }
 }
 
+impl<'a, T> AsBytes for &'a [T]
+where
+    T: Byteable,
+{
+    fn as_bytes(&self) -> &[u8] {
+        let len = self.len() * std::mem::size_of::<T>();
+        unsafe { core::slice::from_raw_parts(self.as_ptr() as *const u8, len) }
+    }
+}
+
 unsafe impl<T> Byteable for [T]
 where
     Self: Sized,
