@@ -8,6 +8,8 @@ mod render_resource;
 mod render_resources;
 mod resource;
 mod shader_defs;
+mod shader_resources;
+mod uniform;
 
 use proc_macro::TokenStream;
 
@@ -54,4 +56,14 @@ pub fn derive_as_vertex_buffer_descriptor(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(DynamicPlugin)]
 pub fn derive_dynamic_plugin(input: TokenStream) -> TokenStream {
     app_plugin::derive_dynamic_plugin(input)
+}
+
+#[proc_macro_derive(Uniform)]
+pub fn derive_uniform(input: TokenStream) -> TokenStream {
+    uniform::derive_uniform(input)
+}
+
+#[proc_macro_derive(ShaderResources, attributes(uniform, buffer, texture))]
+pub fn derive_shader_resources(input: TokenStream) -> TokenStream {
+    shader_resources::derive_shader_resources(input)
 }
