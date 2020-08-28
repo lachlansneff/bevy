@@ -10,6 +10,7 @@ struct MyUniform {
     foo: Vec3,
     ints: [u32; 2],
 }
+
 #[derive(Default, ShaderResources)]
 struct MyShaderResources {
     #[uniform(set = 0, binding = 0)]

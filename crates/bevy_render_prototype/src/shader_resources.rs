@@ -16,10 +16,10 @@ pub enum ShaderResource<'a> {
 impl fmt::Debug for ShaderResource<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Uniform(_) => write!(f, "uniform shader resource"),
-            Self::GpuUniform(_) => write!(f, "uniform shader resource in a buffer"),
-            Self::Buffer(_) => write!(f, "gpu buffer shader resource"),
-            Self::Texture(_) => write!(f, "gpu texture shader resource"),
+            Self::Uniform(_) => write!(f, "ShaderResource::Uniform"),
+            Self::GpuUniform(_) => write!(f, "ShaderResource::GpuUniform"),
+            Self::Buffer(_) => write!(f, "ShaderResource::Buffer"),
+            Self::Texture(_) => write!(f, "ShaderResource::Texture"),
         }
     }
 }
