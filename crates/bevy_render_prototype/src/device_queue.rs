@@ -5,19 +5,23 @@ use crate::{
     commands::CommandBuffer,
     texture::{Extent3d, TextureCopyView, TextureDataLayout},
 };
+#[cfg(feature = "wgpu")]
+use std::sync::Arc;
 
+#[derive(Clone)]
 #[non_exhaustive]
 pub enum Device {
     #[cfg(feature = "wgpu")]
-    Wgpu(wgpu::Device),
+    Wgpu(Arc<wgpu::Device>),
     #[cfg(feature = "headless")]
     Headless,
 }
 
+#[derive(Clone)]
 #[non_exhaustive]
 pub enum Queue {
     #[cfg(feature = "wgpu")]
-    Wgpu(wgpu::Queue),
+    Wgpu(Arc<wgpu::Queue>),
     #[cfg(feature = "headless")]
     Headless,
 }

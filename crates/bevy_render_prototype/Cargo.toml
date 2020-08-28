@@ -11,6 +11,8 @@ default = ["wgpu", "headless"]
 headless = []
 
 [dependencies]
+# bavy
+bevy_app = { path = "../bevy_app", version = "0.1" }
 bevy_asset = { path = "../bevy_asset", version = "0.1" }
 bevy_derive = { path = "../bevy_derive", version = "0.1" }
 bevy_core = { path = "../bevy_core", version = "0.1" }
@@ -23,6 +25,7 @@ bitflags = "1.2"
 shader-types = "0.2.1"
 spirv-reflect = "0.2.3"
 bevy-glsl-to-spirv = "0.1.7"
+pollster = "0.2.0"
 
 [dependencies.wgpu]
 version = "0.6"
