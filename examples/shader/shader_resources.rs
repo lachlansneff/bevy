@@ -19,10 +19,16 @@ struct MyShaderResources {
     my_buffer: Handle<Buffer>,
     #[texture(set = 0, binding = 2)]
     my_texture: Handle<Texture>,
+
+    #[specialize_define]
+    enable_shadows: bool,
+    #[specialize_define("FOOBAR_ENABLED")]
+    enable_foobar: bool,
 }
 
 fn main() {
     let resources = MyShaderResources::default();
 
     println!("{:#?}", resources.shader_resources());
+    println!("{:#?}", resources.shader_specialization());
 }

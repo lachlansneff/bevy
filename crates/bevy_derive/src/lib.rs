@@ -63,7 +63,10 @@ pub fn derive_uniform(input: TokenStream) -> TokenStream {
     uniform::derive_uniform(input)
 }
 
-#[proc_macro_derive(ShaderResources, attributes(uniform, buffer, texture))]
+#[proc_macro_derive(
+    ShaderResources,
+    attributes(uniform, buffer, texture, specialize_define)
+)]
 pub fn derive_shader_resources(input: TokenStream) -> TokenStream {
     shader_resources::derive_shader_resources(input)
 }

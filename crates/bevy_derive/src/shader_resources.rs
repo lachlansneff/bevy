@@ -2,8 +2,14 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashSet;
 use syn::{
-    parse_macro_input, Data, DeriveInput, Error, Fields, Lit, Meta, MetaList, NestedMeta, Result,
+    parse_macro_input, Attribute, Data, DeriveInput, Error, Fields, Lit, LitStr, Meta, NestedMeta,
+    Result,
 };
+
+enum Kind {
+    Resource(TokenStream),
+    SpecializeDefine(TokenStream),
+}
 
 pub fn derive_shader_resources(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
@@ -33,12 +39,20 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
 
     let mut set_binding_set = HashSet::new();
     let mut shader_resources = Vec::new();
+    let mut define_specializations = Vec::new();
 
     for field in fields.named {
         let field_name = field.ident.unwrap();
         let field_name_string = format!("{}", field_name);
 
-        let mut parse_set_binding = |meta_list: MetaList| {
+        let mut parse_set_binding = |attr: &Attribute| {
+            let meta = attr.parse_meta().unwrap();
+
+            let meta_list = match meta {
+                Meta::List(meta_list) => meta_list,
+                _ => panic!("attribute must have arguments"),
+            };
+
             let mut set: Option<u32> = None;
             let mut binding: Option<u32> = None;
 
@@ -86,41 +100,48 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
             (set, binding)
         };
 
-        let shader_resource = field
+        let kind = field
             .attrs
             .iter()
             .find_map(|attr| {
-                let meta = attr.parse_meta().ok()?;
+                if attr.path.is_ident("uniform") {
+                    let (set, binding) = parse_set_binding(attr);
 
-                let meta_list = match meta {
-                    Meta::List(meta_list) => meta_list,
-                    _ => return None,
-                };
-
-                if meta_list.path.is_ident("uniform") {
-                    let (set, binding) = parse_set_binding(meta_list);
-
-                    Some(quote! {(
+                    Some(Kind::Resource(quote! {(
                         Cow::from(#field_name_string),
                         ShaderBinding { set: #set, binding: #binding },
                         ShaderResource::Uniform(&self.#field_name),
-                    )})
-                } else if meta_list.path.is_ident("buffer") {
-                    let (set, binding) = parse_set_binding(meta_list);
+                    )}))
+                } else if attr.path.is_ident("buffer") {
+                    let (set, binding) = parse_set_binding(attr);
 
-                    Some(quote! {(
+                    Some(Kind::Resource(quote! {(
                         Cow::from(#field_name_string),
                         ShaderBinding { set: #set, binding: #binding },
                         ShaderResource::Buffer(self.#field_name),
-                    )})
-                } else if meta_list.path.is_ident("texture") {
-                    let (set, binding) = parse_set_binding(meta_list);
+                    )}))
+                } else if attr.path.is_ident("texture") {
+                    let (set, binding) = parse_set_binding(attr);
 
-                    Some(quote! {(
+                    Some(Kind::Resource(quote! {(
                         Cow::from(#field_name_string),
                         ShaderBinding { set: #set, binding: #binding },
                         ShaderResource::Texture(self.#field_name),
-                    )})
+                    )}))
+                } else if attr.path.is_ident("specialize_define") {
+                    if let Ok(lit_str) = attr.parse_args::<LitStr>() {
+                        Some(Kind::SpecializeDefine(quote! {(
+                            Cow::from(#lit_str),
+                            self.#field_name,
+                        )}))
+                    } else if attr.tokens.is_empty() {
+                        Some(Kind::SpecializeDefine(quote! {(
+                            Cow::from(#field_name_string),
+                            self.#field_name,
+                        )}))
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -130,7 +151,14 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
                 field_name
             ));
 
-        shader_resources.push(shader_resource);
+        match kind {
+            Kind::Resource(tokens) => {
+                shader_resources.push(tokens);
+            }
+            Kind::SpecializeDefine(tokens) => {
+                define_specializations.push(tokens);
+            }
+        }
     }
 
     let code = quote! {
@@ -147,7 +175,9 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
                     )*]
                 }
                 fn shader_specialization(&self) -> Vec<(Cow<str>, bool)> {
-                    unimplemented!("shader specialization")
+                    vec![#(
+                        #define_specializations,
+                    )*]
                 }
             }
         };
