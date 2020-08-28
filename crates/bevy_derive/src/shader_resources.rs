@@ -100,10 +100,10 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
             (set, binding)
         };
 
-        let kind = field
+        let mut kinds = field
             .attrs
             .iter()
-            .find_map(|attr| {
+            .filter_map(|attr| {
                 if attr.path.is_ident("uniform") {
                     let (set, binding) = parse_set_binding(attr);
 
@@ -146,10 +146,21 @@ pub fn do_derive(ast: DeriveInput) -> Result<TokenStream> {
                     None
                 }
             })
-            .expect(&format!(
-                "field `{}` must have a shader resource attribute",
-                field_name
+            .collect::<Vec<_>>();
+
+        let kind = if kinds.is_empty() {
+            return Err(Error::new(
+                field_name.span(),
+                &format!("`{}` must have a ShaderResource attribute", field_name),
             ));
+        } else if kinds.len() > 1 {
+            return Err(Error::new(
+                field_name.span(),
+                &format!("`{}` can only have a single attribute", field_name),
+            ));
+        } else {
+            kinds.remove(0)
+        };
 
         match kind {
             Kind::Resource(tokens) => {
