@@ -1,7 +1,9 @@
 use crate::{buffer::Buffer, texture::Texture};
 use bevy_asset::Handle;
 use bevy_math::{Mat2, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
+
+pub use bevy_derive::{ShaderResources, Uniform};
 
 #[derive(Clone)]
 pub enum ShaderResource<'a> {
@@ -11,7 +13,18 @@ pub enum ShaderResource<'a> {
     Texture(Handle<Texture>),
 }
 
-#[derive(Clone)]
+impl fmt::Debug for ShaderResource<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Uniform(_) => write!(f, "uniform shader resource"),
+            Self::GpuUniform(_) => write!(f, "uniform shader resource in a buffer"),
+            Self::Buffer(_) => write!(f, "gpu buffer shader resource"),
+            Self::Texture(_) => write!(f, "gpu texture shader resource"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ShaderBinding {
     pub set: u32,
     pub binding: u32,
@@ -25,8 +38,8 @@ pub trait Uniform {
 }
 
 pub trait ShaderResources {
-    fn shader_resources(&self) -> Cow<[(Option<Cow<str>>, ShaderBinding, ShaderResource)]>;
-    fn shader_specialization(&self) -> Cow<[(Cow<str>, bool)]>;
+    fn shader_resources(&self) -> Vec<(Cow<str>, ShaderBinding, ShaderResource)>;
+    fn shader_specialization(&self) -> Vec<(Cow<str>, bool)>;
 }
 
 // The way I'm visualing this:
@@ -55,7 +68,6 @@ pub trait ShaderResources {
 //     #[specialize("ENABLE_FOOBAR")]
 //     foobar_enabled: bool,
 // }
-
 
 // Can we just recreate this in every instance of the proc macro
 // to avoid exporting them?
