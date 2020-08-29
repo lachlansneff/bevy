@@ -103,7 +103,7 @@ pub struct TaskPool {
     /// Vec<Task<T>> contained within TaskPoolInner
     executor: Arc<multitask::Executor>,
 
-    ///
+    /// Inner state of the pool
     inner: Arc<TaskPoolInner>,
 }
 
